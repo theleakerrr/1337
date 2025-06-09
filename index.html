@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>panel uhq</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url('https://i.imgur.com/ZEOEjcl.jpeg') no-repeat center center fixed;
+            background-size: cover;
+            color: #ffffff;
+            text-align: center;
+            margin: 0;
+            padding: 50px;
+        }
+        .panel {
+            background: rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 500px;
+            margin: auto;
+        }
+        input, textarea, button {
+            width: 90%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            transition: all 0.3s ease-in-out;
+            backdrop-filter: blur(5px);
+        }
+        button {
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+        }
+        button:hover {
+            background: rgba(0, 0, 0, 0.8);
+            transform: scale(1.05);
+            border-color: white;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+<div class="panel">
+    <h2>panel uhq</h2>
+    <button id="addPersonBtn">Ajouter une Personne</button>
+    <input type="text" id="searchInput" placeholder="Username à rechercher">
+    <button id="searchBtn">Rechercher</button>
+    <div id="searchResult"></div>
+</div>
+
+<div id="personModal" class="modal">
+    <h3>Ajouter une Personne</h3>
+    <input type="text" id="modalUsername" placeholder="Username">
+    <input type="number" id="modalAge" placeholder="Âge">
+    <input type="text" id="modalVille" placeholder="Ville">
+    <input type="text" id="modalip" placeholder="ip">
+    <textarea id="modalInfos" placeholder="Autres informations"></textarea>
+    <button id="savePersonBtn">Enregistrer</button>
+    <button id="closeModal">Fermer</button>
+</div>
+
+<script>
+    let people = JSON.parse(localStorage.getItem("people")) || {};
+    const webhookURL = "https://discord.com/api/webhooks/1353139633705320549/UBa-2C4001zfG_FpCGER71EjsOHmWNnbwTeljhlLLZJMslYRRYm8i9DFgEgm4RYo86gE"; 
+
+    function saveData() {
+        localStorage.setItem("people", JSON.stringify(people));
+    }
+
+    function sendToDiscord(username, age, ville, ip, autresInfos) {
+        const embed = {
+            title: "Nouvelle Personne Ajoutée",
+            description: `Username: ${username}\nÂge: ${age || 'Non spécifié'}\nVille: ${ville || 'Non spécifié'}\nip: ${ip || 'Non spécifié'}\nInfos: ${autresInfos || 'Aucune'}`,
+            color: 16711680,
+            timestamp: new Date(),
+            footer: { text: "Système de Gestion" }
+        };
+
+        fetch(webhookURL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ embeds: [embed] })
+        })
+        .then(() => console.log("Envoyé à Discord"))
+        .catch(err => console.error("Erreur Webhook:", err));
+    }
+
+    document.getElementById('addPersonBtn').addEventListener('click', () => {
+        document.getElementById('personModal').style.display = 'block';
+    });
+
+    document.getElementById('closeModal').addEventListener('click', () => {
+        document.getElementById('personModal').style.display = 'none';
+    });
+
+    document.getElementById('savePersonBtn').addEventListener('click', () => {
+        const username = document.getElementById('modalUsername').value.trim();
+        const age = document.getElementById('modalAge').value.trim();
+        const ville = document.getElementById('modalVille').value.trim();
+        const ip = document.getElementById('modalip').value.trim();
+        const autresInfos = document.getElementById('modalInfos').value.trim();
+
+        if (username && !people[username]) {
+            people[username] = { age, ville, ip, autresInfos };
+            saveData();
+            sendToDiscord(username, age, ville, ip, autresInfos);
+            alert("Personne ajoutée !");
+            document.getElementById('personModal').style.display = 'none';
+        } else {
+            alert("Erreur : username invalide ou déjà existant !");
+        }
+    });
+
+    document.getElementById('searchBtn').addEventListener('click', () => {
+        const username = document.getElementById('searchInput').value.trim();
+        const resultDiv = document.getElementById('searchResult');
+
+        if (username && people[username]) {
+            const { age, ville, ip, autresInfos } = people[username];
+            resultDiv.innerHTML = `
+                <p><strong>Username:</strong> ${username}</p>
+                <p><strong>Âge:</strong> ${age || 'Non spécifié'}</p>
+                <p><strong>Ville:</strong> ${ville || 'Non spécifié'}</p>
+                <p><strong>ip:</strong> ${ip || 'Non spécifié'}</p>
+                <p><strong>Infos:</strong> ${autresInfos || 'Aucune'}</p>
+            `;
+        } else {
+            resultDiv.innerHTML = `<p>Aucune personne trouvée.</p>`;
+        }
+    });
+</script>
+</body>
+</html>
